@@ -1,0 +1,187 @@
+package com.baboaisystem.resolution;
+
+import java.util.List;
+import java.util.Map;
+
+import com.baboaisystem.config.network.model.Location;
+import com.baboaisystem.config.network.model.Network;
+import com.baboaisystem.exceptions.dns.DnsException;
+import com.baboaisystem.exceptions.ns.NamingServiceException;
+import com.baboaisystem.resolution.dns.DnsRecord;
+import com.baboaisystem.resolution.dns.DnsRecordsType;
+import com.baboaisystem.resolution.naming.service.NamingServiceType;
+
+public interface DomainResolution {
+
+    /**
+     * Checks if the domain name is valid according to naming service rules for valid domain names
+     *
+     * @param domain domain name to be checked
+     * @return true if domain name is valid
+     * @throws NamingServiceException when it fails to make network call
+     */
+    boolean isSupported(String domain) throws NamingServiceException;
+
+    /**
+     * Returns configured network id
+     * @param type which NamingService you are interested in
+     * @return Network object with name and code property
+     */
+    Network getNetwork(NamingServiceType type);
+
+    /**
+     * Returns all records and their's values from a domain
+     * @param domain domain name such as "brad.crypto"
+     * @return map of recordKey to recordValue
+     * @throws NamingServiceException when domain is not registered
+     */
+    Map<String, String> getAllRecords(String domain) throws NamingServiceException;
+
+    /**
+     * Resolves domain for a specific record
+     *
+     * @param domain trimed and lowercased domain name such as "brad.crypto"
+     * @param recordKey key of the record
+     * @return address in hex-string format
+     * @throws NamingServiceException when domain has no record of key
+     */
+    String getRecord(String domain, String recordKey) throws NamingServiceException;
+    
+    /**
+     * Resolves domain for specific list of records
+     * 
+     * @param domain domain name such as "brad.crypto"
+     * @param recordsKeys list of all recordsKeys to be resolved
+     * @return Map of recordKey to values
+     * @throws NamingServiceException when domain is not registered
+     */
+    Map<String, String> getRecords(String domain, List<String> recordsKeys) throws NamingServiceException;
+
+
+    /**
+     * Resolves domain for a specific ticker address
+     *
+     * @param domain domain name such as "brad.crypto"
+     * @param ticker coin ticker such as ETH
+     * @return address in hex-string format
+     * @throws NamingServiceException when domain has no record of a given currency or it's tld is not supported
+     */
+    String getAddress(String domain, String ticker) throws NamingServiceException;
+
+    /**
+     * Resolves domain for a cross chain address
+     * @param domain domain name such as "brad.crypto"
+     * @param ticker coin ticker such as usdt, ftm and etc.
+     * @param chain chain to look for, usually means blockcahin ( erc20,  omni, tron, etc. )
+     * @return address for specific chain
+     * @throws NamingServiceException when domain has no record
+     */
+    String getMultiChainAddress(String domain, String ticker, String chain) throws NamingServiceException;
+
+    /**
+     * Produces a getNamehash for a specific domain
+     *
+     * @param domain domain name such as "brad.crypto"
+     * @return getNamehash of a domain for a specific NamingService
+     * @throws NamingServiceException if tld of the domain is not recognized
+     * @see <a href="https://docs.ens.domains/contract-api-reference/name-processing">
+     * https://docs.ens.domains/contract-api-reference/name-processing </a>
+     */
+    String getNamehash(String domain) throws NamingServiceException;
+
+    /**
+     * Resolves domain for an ipfs hash
+     *
+     * @param domain domain name such as "brad.crypto"
+     * @return ipfs hash used to redirect people to ipfs content
+     * @throws NamingServiceException if no record is present
+     * @see <a href="https://docs.ipfs.io/concepts/what-is-ipfs">
+     * https://docs.ipfs.io/concepts/what-is-ipfs </a>
+     */
+    String getIpfsHash(String domain) throws NamingServiceException;
+
+    /**
+     * Resolves an getEmail address from a domain
+     *
+     * @param domain domain name such as "brad.crypto"
+     * @return getEmail address
+     * @throws NamingServiceException if no getEmail is present
+     */
+    String getEmail(String domain) throws NamingServiceException;
+
+    /**
+     * Resolves getOwner address from a domain
+     *
+     * @param domain domain name such as "brad.crypto"
+     * @return Ethereum address of a domain's getOwner
+     * @throws NamingServiceException if getOwner is not present
+     */
+    String getOwner(String domain) throws NamingServiceException;
+    
+    /**
+     * Resolves owner addresses for many domains
+     * @param domains string list of domain names you want to resolve
+     * @return map of domain to owner addreses.
+     * @throws NamingServiceException
+     */
+    Map<String, String> getBatchOwners(List<String> domains) throws NamingServiceException;
+
+
+    /**
+     * Resolves dns records from a domain
+     * 
+     * @param domain domain name such as "brad.crypto"
+     * @param types List of DnsRecordsType to resolve for
+     * @return List of DnsRecord
+     * @throws NamingServiceException
+     */
+    List<DnsRecord> getDns(String domain, List<DnsRecordsType> types) throws NamingServiceException, DnsException;
+
+    /**
+     * Retrieves the tokenURI from the registry smart contract.
+     *
+     * @param domain domain name such as "brad.crypto"
+     * @return the ERC721Metadata#tokenURI contract method result
+     * @throws NamingServiceException if domain is not found or invalid
+     */
+    String getTokenURI(String domain) throws NamingServiceException;
+
+    /**
+     * Retrieves the data from the endpoint provided by tokenURI from the registry smart contract.
+     *
+     * @param domain domain name such as "brad.crypto"
+     * @return the JSON response of the token URI endpoint
+     * @throws NamingServiceException if domain is not found or invalid
+     */
+    TokenUriMetadata getTokenURIMetadata(String domain) throws NamingServiceException;
+
+    /**
+     * Retrieves the domain name from token metadata that is provided by tokenURI from the registry smart contract.
+     * The function also checks if the returned domain matches the hash parameter.
+     *
+     * @param hash domain name hash
+     * @param service nameservice which is used for lookup
+     * @return the JSON response of the token URI endpoint
+     * @throws NamingServiceException if domain is not found or invalid
+     */
+    String unhash(String hash, NamingServiceType service) throws NamingServiceException;
+
+    /**
+     * Retrieves the location info for provided domains. Location info contains:
+     * <ul>
+     *     <li>RegistryAddress</li>
+     *     <li>ResolverAddress</li>
+     *     <li>Network Id</li>
+     *     <li>Blockchain (Coin symbol) </li>
+     *     <li>Owner address</li>
+     *     <li>Blockchain provider URL</li>
+     * </ul>
+     * If a domain is not found, {@code null} will be returned for that domain in the resulting map.
+     * The domain array should be consistent. All domains should be from the same naming service.
+     * 
+     * @param domains domain names
+     * @return map of domain names and Location info
+     * @throws NamingServiceException for network errors
+     */
+    Map<String, Location> getLocations(String... domains) throws NamingServiceException;
+}
