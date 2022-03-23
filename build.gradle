@@ -50,3 +50,80 @@ test {
     }
 }
 
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            artifactId = archivesBaseName
+            from components.java
+            versionMapping {
+                usage('java-api') {
+                    fromResolutionOf('runtimeClasspath')
+                }
+                usage('java-runtime') {
+                    fromResolutionResult()
+                }
+            }
+
+            pom {
+                name.set('resolution')
+                description.set('Ethereum domain registry to resolve information connected to ens domain')
+                url.set('https://github.com/baboaisystem/domain_resolution_java')
+                licenses {
+                    license {
+                        name.set('MIT License')
+                        url.set('http://www.opensource.org/licenses/mit-license.php')
+                    }
+                }
+                developers {
+                    developer {                        
+                        name.set('baboaisnow')
+                        email.set('snow@baboai.com')
+                        organization.set('com.github.baboaisystem')
+                    }
+                }
+                scm {
+                    connection.set('scm:git:git://github.com/baboaisystem/domain_resolution_java.git')
+                    developerConnection.set('scm:git:ssh://github.com/baboaisystem/domain_resolution_java.git')
+                    url.set('https://github.com/baboaisystem/domain_resolution_java')
+                }
+            }
+        }
+    }
+    repositories {
+        maven {
+            name = 'MavenCentral'
+            def releasesRepoUrl = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2'
+            def snapshotsRepoUrl = 'https://s01.oss.sonatype.org/content/repositories/snapshots'
+            url = version.endsWith('SNAPSHOT') ? snapshotsRepoUrl : releasesRepoUrl
+            credentials {
+                username = System.getenv('nexusUsername')
+                password = System.getenv('nexusPassword')
+            }
+        }
+    }
+}
+
+signing {
+    useInMemoryPgpKeys(System.getenv('PGP_SIGNING_KEY'), System.getenv('PGP_SIGNING_PASSWORD'))
+    sign publishing.publications.mavenJava
+}
+
+nexusStaging {
+    username = System.getenv('nexusUsername')
+    password = System.getenv('nexusPassword')
+}
+
+task getVersion {
+    def client = file('src/main/resources/com/baboaisystem/config/client/client.json')
+    version = new JsonSlurper().parseText(client.text).'version'
+}
+
+task pullNetworkConfig(type: Download) {
+    src 'https://raw.githubusercontent.com/baboaisystem/uns/main/uns-config.json'
+    dest 'src/main/resources/com/baboaisystem/config/network'
+}
+
+task pullResolverKeys(type: Download) {
+    src 'https://raw.githubusercontent.com/baboaisystem/uns/main/resolver-keys.json'
+    dest 'src/main/resources/com/baboaisystem/config/knownRecords.json'
+}
